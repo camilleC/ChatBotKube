@@ -16,6 +16,7 @@ ENV/
 # VSCode and macOS specific
 .vscode/
 .DS_Store
+.viminfo
 
 # Jupyter or IPython
 .ipynb_checkpoints/
