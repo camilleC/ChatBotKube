@@ -6,7 +6,7 @@ An AI-powered chatbot with adaptive conversation, robust error handling, and ful
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 - [Architecture Overview](#architecture-overview)
 - [Features](#features)
 - [Demo](#demo)
@@ -91,7 +91,7 @@ An AI-powered chatbot with adaptive conversation, robust error handling, and ful
 
 ---
 
-## 📋 Prerequisites
+##  Prerequisites
 
 ### For Local Development
 - Docker and Docker Compose
@@ -105,7 +105,7 @@ An AI-powered chatbot with adaptive conversation, robust error handling, and ful
 - Terraform (for AWS)
 - AWS CLI (for AWS deployment)
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -142,7 +142,7 @@ make lint
 make docker-build
 ```
 
-## 📊 Monitoring & Observability
+## Monitoring & Observability
 
 ### Prometheus Metrics
 - HTTP request metrics with status codes
@@ -158,7 +158,7 @@ make docker-build
 
 
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 SpansishTutor/
@@ -175,7 +175,7 @@ SpansishTutor/
 └── README-*.md           # Detailed documentation
 ```
 
-## 🔍 API Endpoints
+## API Endpoints
 
 ### Health Check
 ```bash
@@ -196,7 +196,7 @@ POST /chat
 GET /metrics
 ```
 
-## 🧪 Testing
+##  Testing
 
 ### Run All Tests
 ```bash
@@ -214,14 +214,14 @@ pytest tests/test_endpoints.py -v
 pytest tests/ --cov=spanishtutor --cov-report=html
 ```
 
-## 🔒 Security
+##  Security
 
 - API keys stored in Kubernetes secrets
 - Environment variable configuration
 - Health checks and readiness probes
 - Resource limits and requests
 
-## 📈 Scaling
+##  Scaling
 
 ### Horizontal Scaling
 - Kubernetes Horizontal Pod Autoscaling (HPA)
