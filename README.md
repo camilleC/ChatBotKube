@@ -28,7 +28,7 @@ An AI-powered chatbot with adaptive conversation, robust error handling, and ful
 - **FastAPI Backend**: Processes chat messages, handles errors, and exposes Prometheus metrics.
 - **Ollama/OpenAI-Compatible LLM**: Local or remote LLM inference for cost-effective, private tutoring.
 - **Prometheus & Grafana**: Real-time metrics, dashboards, and alerting.
-- **Docker Compose**: Orchestrates all services for local or cloud deployment.
+- **Kubernetes (Kind)**: Local Kubernetes cluster for development and testing.
 
 ---
 
@@ -53,131 +53,289 @@ An AI-powered chatbot with adaptive conversation, robust error handling, and ful
 
 ##  Quick Start
 
-### 1. Clone the Repo & Set Up Environment
+### Local Kubernetes (Kind)
 
-```bash
-git clone https://github.com/camilleC/SpanishTutor.git
-cd SpanishTutor
-python -m venv venv
-source venv/bin/activate
-pip install -e .
+1. **Set your API credentials:**
+   - Create a `.env` file in the project root:
+     ```bash
+     echo "LLM_API_KEY=your-api-key" > .env
+     echo "LLM_BASE_URL=your-llm-base-url" >> .env
+     set -a; source .env; set +a
+     ```
+2. **Build and load the Docker image:**
+   ```bash
+   docker build -t spanish-tutor:latest .
+   kind create cluster --config kind-config.yaml
+   kind load docker-image spanish-tutor:latest
+   ```
+3. **Install with Helm:**
+   ```bash
+   helm install spanish-tutor ./helm/spanish-tutor \
+     --set image.repository=spanish-tutor \
+     --set image.tag=latest \
+     --set config.llm.apiKey="$LLM_API_KEY" \
+     --set config.llm.baseUrl="$LLM_BASE_URL"
+   ```
+4. **Port forward to access services:**
+   ```bash
+   kubectl port-forward svc/spanish-tutor-api 8000:8000 &
+   kubectl port-forward svc/spanish-tutor-ui 7860:7860 &
+   kubectl port-forward svc/spanish-tutor-prometheus 9090:9090 &
+   kubectl port-forward svc/spanish-tutor-grafana 3000:3000 &
+   ```
+5. **Access the app:**
+   - API: http://localhost:8000
+   - UI:  http://localhost:7860
+   - Prometheus: http://localhost:9090
+   - Grafana: http://localhost:3000 (admin/admin)
+
+---
+
+## 📋 Prerequisites
+
+### For Local Development
+- Docker and Docker Compose
+- Python 3.10+
+- LLM API credentials (OpenAI, Anthropic, etc.)
+
+### For Kubernetes Deployment
+- kubectl
+- Helm
+- Kind (for local testing)
+- Terraform (for AWS)
+- AWS CLI (for AWS deployment)
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Gradio UI     │    │   FastAPI API   │    │   Prometheus    │
+│   (Port 7860)   │◄──►│   (Port 8000)   │◄──►│   (Port 9090)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                       │
+                                ▼                       ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │   LLM Service   │    │     Grafana     │
+                       │  (External)     │    │   (Port 3000)   │
+                       └─────────────────┘    └─────────────────┘
 ```
 
-### 2. Start Ollama for Local LLM
+## 🛠️ Development
 
+### Install Dependencies
 ```bash
-ollama run llama3
+make install
 ```
 
-### 3. Launch All Services with Docker Compose
-
+### Run Tests
 ```bash
-docker-compose up --build
+make test
 ```
 
-#### Service URLs:
-- Gradio UI → http://localhost:7860
-- FastAPI API → http://localhost:8000
-- Prometheus → http://localhost:9090
-- Grafana → http://localhost:3000
-
----
-
-##  API Endpoints
-
-- `POST /chat` — Main chat endpoint. Handles retries and error mapping.
-- `GET /health` — Health check.
-- `GET /metrics` — Prometheus metrics endpoint.
-
----
-
-## 📈 Observability
-
-- Prometheus scrapes FastAPI metrics (latency, error rates, status codes, chat turns, etc.).
-- Dashboards are auto-provisioned in Grafana.
-
-To view dashboards:
-1. Visit [http://localhost:3000](http://localhost:3000)
-2. Log in with: `admin` / `admin`
-3. Dashboards load from `grafana/dashboards/`
-
-Dashboards:
-- ✅ Usage & Performance
-- 🚨 Reliability
-
----
-
-## Error Handling & Reliability
-
-- Custom exceptions:
-  - `TutorModelUnavailable`
-  - `TutorBadRequest`
-  - `TutorInternalError`
-- Automatic retry logic for transient model errors (up to 3 attempts)
-- All errors mapped to appropriate HTTP status codes
-- Prometheus counters track error types
-
----
-
-## Testing
-
-The test suite includes unit tests for:
-- Core chat logic
-- API request/response handling
-- Gradio UI integration
-
-To run tests:
-
+### Run Linters
 ```bash
-pytest spanishtutor/tests/
-pytest --cov=spanishtutor
+make lint
 ```
 
----
+### Build Docker Image
+```bash
+make docker-build
+```
 
-##  Configuration
+## 📊 Monitoring & Observability
 
-- Environment variables are managed in `docker-compose.yml`
-- All Python dependencies are listed in `requirements.txt`
-- Ollama model is assumed to be `llama3` (configurable)
-- Use a .env file but do not check it into github. To start, use these values:
+### Prometheus Metrics
+- HTTP request metrics with status codes
+- Chat request rates and latency
+- Error tracking by type
+- Custom application metrics
 
-- API_URL=http://spanish-tutor-api:8000/chat
-- LOG_LEVEL=info
-- API_PORT=8000
-- LOG_LEVEL=DEBUG
-- MODEL_NAME=llama3.2
-- LLM_BASE_URL=http://host.docker.internal:11434/v1
-- LLM_API_KEY=ollama
-- PROMETHEUS_SCRAPE_INTERVAL=5s
-- GRAFANA_HOST_PORT=3000
-- PROMETHEUS_HOST_PORT=9090
-- GRAFANA_ADMIN_USER=admin
-- GRAFANA_ADMIN_PASSWORD=admin
+### Grafana Dashboards
+- Real-time request rates and latency
+- Error rates and types
+- Resource utilization
+- Custom application dashboards
 
 
----
 
-## Contributing
+## 📁 Project Structure
 
-1. Fork this repo
-2. Create a feature branch
-3. Add tests for your changes
-4. Open a pull request
+```
+SpansishTutor/
+├── spanishtutor/           # Application source code
+│   ├── src/
+│   │   ├── api/           # FastAPI application
+│   │   ├── core/          # Core business logic
+│   │   └── main.py        # Gradio UI entry point
+│   └── tests/             # Test suite
+├── helm/                  # Kubernetes Helm charts
+├── grafana/               # Grafana dashboards
+├── scripts/               # Deployment scripts
+├── Makefile               # Development commands
+└── README-*.md           # Detailed documentation
+```
 
----
+## 🔍 API Endpoints
 
-## Acknowledgments
+### Health Check
+```bash
+GET /health
+```
 
-- [Ollama](https://ollama.com/)
-- [Gradio](https://www.gradio.app/)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Prometheus](https://prometheus.io/)
-- [Grafana](https://grafana.com/)
+### Chat Endpoint
+```bash
+POST /chat
+{
+  "message": "Hello, how are you?",
+  "history": [["user", "Hi"], ["assistant", "Hello!"]]
+}
+```
+
+### Metrics
+```bash
+GET /metrics
+```
+
+## 🧪 Testing
+
+### Run All Tests
+```bash
+make test
+```
+
+### Run Specific Tests
+```bash
+pytest tests/test_api.py -v
+pytest tests/test_endpoints.py -v
+```
+
+### Test Coverage
+```bash
+pytest tests/ --cov=spanishtutor --cov-report=html
+```
+
+## 🔒 Security
+
+- API keys stored in Kubernetes secrets
+- Environment variable configuration
+- Health checks and readiness probes
+- Resource limits and requests
+
+## 📈 Scaling
+
+### Horizontal Scaling
+- Kubernetes Horizontal Pod Autoscaling (HPA)
+- Multiple API replicas
+- Load balancer distribution
+
+### Vertical Scaling
+- Configurable resource limits
+- CPU and memory optimization
+- Performance monitoring
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+1. **Service not accessible**
+   ```bash
+   # Check service status
+   kubectl get svc -n spanish-tutor
+   
+   # Port forward for debugging
+   kubectl port-forward svc/spanish-tutor-api 8000:8000 -n spanish-tutor
+   ```
+
+2. **Pod not starting**
+   ```bash
+   # Check pod logs
+   kubectl logs deployment/spanish-tutor-api -n spanish-tutor
+   
+   # Check pod events
+   kubectl describe pod -l app.kubernetes.io/name=spanish-tutor -n spanish-tutor
+   ```
+
+3. **Image not found**
+   ```bash
+   # For Kind
+   kind load docker-image spanish-tutor:latest
+   
+   # For EKS
+   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin $ECR_REPO_URL
+   ```
+
+### Useful Commands
+```bash
+# Check deployment status
+make status
+
+# View logs
+make logs
+make logs-ui
+
+# Scale deployments
+kubectl scale deployment spanish-tutor-api --replicas=3 -n spanish-tutor
+```
+
+## 📚 Documentation
+
+- [Kubernetes Deployment Guide](README-KUBERNETES.md) - Detailed K8s setup
+- [Deployment Options](DEPLOYMENT.md) - Complete deployment comparison
+- [Terraform Documentation](terraform/README.md) - Infrastructure setup
+- [Helm Chart Documentation](helm/spanish-tutor/README.md) - Chart configuration
+
 
 ---
 
 ## Why This Project?
 
-SpanishTutor explores adding obervability, error handeling, and docker for project using llms.
+SpanishTutor explores adding obervability, error handeling, docker and kubernetes for a project using llms.
+
+# Spanish Tutor - Local Kubernetes Deployment (Kind + Monitoring)
+
+This guide describes how to deploy the Spanish Tutor application on Kubernetes using Kind for local development, with Prometheus and Grafana for monitoring.
+
+## Prerequisites
+- Docker
+- Kind
+- kubectl
+- Helm
+
+## Local Development (Kind)
+1. Create a `.env` file and load it:
+   ```bash
+   echo "LLM_API_KEY=your-api-key" > .env
+   echo "LLM_BASE_URL=your-llm-base-url" >> .env
+   set -a; source .env; set +a
+   ```
+2. Build and load Docker image:
+   ```bash
+   docker build -t spanish-tutor:latest .
+   kind create cluster --config kind-config.yaml
+   kind load docker-image spanish-tutor:latest
+   ```
+3. Install with Helm:
+   ```bash
+   helm install spanish-tutor ./helm/spanish-tutor \
+     --set image.repository=spanish-tutor \
+     --set image.tag=latest \
+     --set config.llm.apiKey="$LLM_API_KEY" \
+     --set config.llm.baseUrl="$LLM_BASE_URL"
+   ```
+4. Port forward:
+   ```bash
+   kubectl port-forward svc/spanish-tutor-api 8000:8000 &
+   kubectl port-forward svc/spanish-tutor-ui 7860:7860 &
+   kubectl port-forward svc/spanish-tutor-prometheus 9090:9090 &
+   kubectl port-forward svc/spanish-tutor-grafana 3000:3000 &
+   ```
+5. Access:
+   - API: http://localhost:8000
+   - UI:  http://localhost:7860
+   - Prometheus: http://localhost:9090
+   - Grafana: http://localhost:3000 (admin/admin)
+
+---
+
+**This setup is intentionally minimal, but includes Prometheus and Grafana for monitoring.**
 

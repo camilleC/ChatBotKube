@@ -1,0 +1,118 @@
+# Default values for spanish-tutor
+# This is a YAML-formatted file.
+
+replicaCount:
+  api: 1
+  ui: 1
+
+image:
+  repository: spanish-tutor
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  apiPort: 8000
+  uiPort: 7860
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: spanish-tutor.local
+      paths:
+        - path: /api
+          pathType: Prefix
+          serviceName: spanish-tutor-api
+          servicePort: 8000
+        - path: /
+          pathType: Prefix
+          serviceName: spanish-tutor-ui
+          servicePort: 7860
+  tls: []
+
+resources:
+  api:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  ui:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Application configuration
+config:
+  api:
+    logLevel: "INFO"
+    port: 8000
+  ui:
+    apiUrl: "http://spanish-tutor-api:8000"
+  
+  # LLM Configuration
+  llm:
+    apiKey: ""
+    baseUrl: ""
+  
+  # Prometheus Configuration
+  prometheus:
+    enabled: true
+    port: 9090
+  
+  # Grafana Configuration
+  grafana:
+    enabled: true
+    port: 3000
+    adminUser: "admin"
+    adminPassword: "admin"
+
+# Persistence
+persistence:
+  grafana:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+# Monitoring
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+  grafanaDashboard:
+    enabled: true 
