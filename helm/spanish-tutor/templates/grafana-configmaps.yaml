@@ -1,0 +1,47 @@
+{{- if .Values.grafana.sidecar.datasources.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-ds
+  labels:
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |-
+{{ (.Files.Get "grafana/provisioning/datasources/datasources.yaml") | indent 4 }}
+
+{{- end }}
+
+{{- if .Values.grafana.sidecar.dashboards.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-provisioning
+data:
+  dashboards.yaml: |-
+{{ (.Files.Get "grafana/provisioning/dashboards/dashboards.yaml") | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-usage-performance
+  labels:
+    grafana_dashboard: "1"
+data:
+  spanish-tutor-usage-performance.json: |-
+{{ (.Files.Get "grafana/dashboards/spanish-tutor-usage-performance.json") | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-reliability
+  labels:
+    grafana_dashboard: "1"
+data:
+  spanish-tutor-reliability.json: |-
+{{ (.Files.Get "grafana/dashboards/spanish-tutor-reliability.json") | indent 4 }}
+
+{{- end }}

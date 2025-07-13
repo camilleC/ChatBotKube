@@ -4,8 +4,8 @@ import gradio as gr
 from typing import List, Tuple
 import os
 
-API_URL = os.getenv("API_URL", "http://localhost:8000/chat") # default value if I'm not running it via docker compose
-
+API_URL = os.getenv("API_URL", "http://localhost:8000/chat")
+UI_PORT = os.getenv("UI_PORT", "7860")
 LEVELS = [
     "A1 - Beginner",
     "A2 - Elementary",
@@ -29,9 +29,8 @@ class SpanishLearningApp:
             fn=self.handle_chat,
             title="Spanish Language Learning Assistant",
             description=(
-                "¡Bienvenido! I'm María, your Spanish tutor from Madrid. "
+                "¡Bienvenido!"
                 "Please tell me your Spanish level (A1, A2, B1, B2, C1, C2) by clicking a button below to begin. "
-                "I'll help you learn Spanish with cultural context and personalized feedback."
             ),
             theme=gr.themes.Soft(
                 primary_hue="blue",

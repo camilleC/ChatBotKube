@@ -1,8 +1,6 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 
-name: spanish-tutor
-
 nodes:
   - role: control-plane
     extraPortMappings:
@@ -18,18 +16,19 @@ nodes:
       - containerPort: 30003
         hostPort: 3000
         protocol: TCP
+    extraMounts:
+      - hostPath: /sys/fs/cgroup
+        containerPath: /sys/fs/cgroup
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+      - |
+        kind: KubeletConfiguration
+        apiVersion: kubelet.config.k8s.io/v1beta1
+        cgroupDriver: "systemd"
 
   - role: worker
   - role: worker
-
-# Enable feature gates
-featureGates:
-  PodSecurity: true
-
-# Configure kubeadm
-kubeadmConfigPatches:
-  - |
-    kind: InitConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true" 

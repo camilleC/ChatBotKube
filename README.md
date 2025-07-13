@@ -1,6 +1,7 @@
 # 🇪🇸 Spanish Tutor
 
-An AI-powered chatbot with adaptive conversation, robust error handling, and full-stack observability.
+An AI-powered chatbot with robust error handling, and full-stack observability.
+This project shows how to containerize an application with Docker, add metrics and observability, and use Helm with Kubernetes.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 
@@ -51,76 +52,122 @@ An AI-powered chatbot with adaptive conversation, robust error handling, and ful
 
 ---
 
-##  Quick Start
+##  Quick Start (Recommended)
 
-### Local Kubernetes (Kind)
+### 1. Set up your environment variables
+Create a `.env` file in the project root:
+```bash
+echo "LLM_API_KEY=your-api-key" > .env
+echo "LLM_BASE_URL=your-llm-base-url" >> .env
+echo "API_URL=http://spanish-tutor-api:8000/chat" >> .env
+```
 
-1. **Set your API credentials:**
-   - Create a `.env` file in the project root:
-     ```bash
-     echo "LLM_API_KEY=your-api-key" > .env
-     echo "LLM_BASE_URL=your-llm-base-url" >> .env
-     set -a; source .env; set +a
-     ```
-2. **Build and load the Docker image:**
+### 2. Build and load the Docker image
+```bash
+make docker-build
+```
+
+### 3. Start your local Kubernetes cluster (Kind)
+```bash
+make kind-setup
+```
+
+### 4. Load the Docker image into Kind
+```bash
+kind load docker-image spanish-tutor:latest
+```
+
+### 5. Generate Helm values file from your .env
+```bash
+make envsubst-values
+```
+
+### 6. Install (or upgrade) the Helm chart
+```bash
+make helm-install
+# If already installed, use:
+# make helm-upgrade
+```
+
+### 7. Restart all services (if needed)
+```bash
+make restart-services
+```
+
+### 8. Port forward to access all services
+```bash
+make port-forward
+```
+
+### 9. Access the app and monitoring
+- UI:  http://localhost:7860
+- API: http://localhost:8000
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000 (admin/admin)
+
+**Note:** If Grafana shows no metrics, ensure the data source is properly configured to connect to `spanish-tutor-prometheus:9090`.
+
+**Note:** All resources are deployed in the `spanish-tutor` namespace. All Makefile commands use this namespace by default.
+
+---
+
+## How to Restart Services
+
+To restart all deployments (API, UI, Prometheus, Grafana) in the namespace:
+```bash
+make restart-services
+```
+
+## How to Clean Up and Re-Deploy Everything
+
+1. Uninstall the Helm release:
    ```bash
-   docker build -t spanish-tutor:latest .
-   kind create cluster --config kind-config.yaml
-   kind load docker-image spanish-tutor:latest
+   make helm-uninstall
    ```
-3. **Install with Helm:**
+2. (Optional) Delete the namespace:
    ```bash
-   helm install spanish-tutor ./helm/spanish-tutor \
-     --set image.repository=spanish-tutor \
-     --set image.tag=latest \
-     --set config.llm.apiKey="$LLM_API_KEY" \
-     --set config.llm.baseUrl="$LLM_BASE_URL"
+   kubectl delete namespace spanish-tutor || true
    ```
-4. **Port forward to access services:**
+3. (Optional) Delete the Kind cluster:
    ```bash
-   kubectl port-forward svc/spanish-tutor-api 8000:8000 &
-   kubectl port-forward svc/spanish-tutor-ui 7860:7860 &
-   kubectl port-forward svc/spanish-tutor-prometheus 9090:9090 &
-   kubectl port-forward svc/spanish-tutor-grafana 3000:3000 &
+   kind delete cluster
    ```
-5. **Access the app:**
-   - API: http://localhost:8000
-   - UI:  http://localhost:7860
-   - Prometheus: http://localhost:9090
-   - Grafana: http://localhost:3000 (admin/admin)
+4. Re-run the Quick Start steps above.
+
+## How to Get Everything Running
+
+1. Ensure your `.env` is correct and loaded.
+2. Build and load the Docker image: `make docker-build`
+3. Start Kind: `make kind-setup`
+4. Load the image into Kind: `kind load docker-image spanish-tutor:latest`
+5. Generate values: `make envsubst-values`
+6. Install/upgrade Helm: `make helm-install` or `make helm-upgrade`
+7. Restart services if needed: `make restart-services`
+8. Port forward: `make port-forward`
+9. Open the UI, API, Prometheus, and Grafana in your browser.
+
+## One-Liner Commands
+
+**Restart and port-forward everything:**
+```bash
+pkill -f 'kubectl port-forward' && make restart-services && make port-forward
+```
 
 ---
 
 ##  Prerequisites
 
 ### For Local Development
-- Docker and Docker Compose
+- Docker
 - Python 3.10+
-- LLM API credentials (OpenAI, Anthropic, etc.)
+- LLM API credentials (OpenAI, Anthropic, etc. or if using locally)
 
 ### For Kubernetes Deployment
 - kubectl
 - Helm
 - Kind (for local testing)
-- Terraform (for AWS)
-- AWS CLI (for AWS deployment)
 
-## Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Gradio UI     │    │   FastAPI API   │    │   Prometheus    │
-│   (Port 7860)   │◄──►│   (Port 8000)   │◄──►│   (Port 9090)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │                       │
-                                ▼                       ▼
-                       ┌─────────────────┐    ┌─────────────────┐
-                       │   LLM Service   │    │     Grafana     │
-                       │  (External)     │    │   (Port 3000)   │
-                       └─────────────────┘    └─────────────────┘
-```
-
-## 🛠️ Development
+## Development
 
 ### Install Dependencies
 ```bash
@@ -156,25 +203,6 @@ make docker-build
 - Resource utilization
 - Custom application dashboards
 
-
-
-##  Project Structure
-
-```
-SpansishTutor/
-├── spanishtutor/           # Application source code
-│   ├── src/
-│   │   ├── api/           # FastAPI application
-│   │   ├── core/          # Core business logic
-│   │   └── main.py        # Gradio UI entry point
-│   └── tests/             # Test suite
-├── helm/                  # Kubernetes Helm charts
-├── grafana/               # Grafana dashboards
-├── scripts/               # Deployment scripts
-├── Makefile               # Development commands
-└── README-*.md           # Detailed documentation
-```
-
 ## API Endpoints
 
 ### Health Check
@@ -186,8 +214,8 @@ GET /health
 ```bash
 POST /chat
 {
-  "message": "Hello, how are you?",
-  "history": [["user", "Hi"], ["assistant", "Hello!"]]
+  "message": "Hola como esta?",
+  "history": [["user", "Hola"], ["assistant", "Como te llama?"]]
 }
 ```
 
@@ -239,29 +267,35 @@ pytest tests/ --cov=spanishtutor --cov-report=html
 
 1. **Service not accessible**
    ```bash
-   # Check service status
-   kubectl get svc -n spanish-tutor
-   
-   # Port forward for debugging
-   kubectl port-forward svc/spanish-tutor-api 8000:8000 -n spanish-tutor
+   make status
+   make port-forward
    ```
 
 2. **Pod not starting**
    ```bash
-   # Check pod logs
-   kubectl logs deployment/spanish-tutor-api -n spanish-tutor
-   
-   # Check pod events
-   kubectl describe pod -l app.kubernetes.io/name=spanish-tutor -n spanish-tutor
+   make logs
+   make logs-ui
+   kubectl describe pod -l app=spanish-tutor-api -n spanish-tutor
    ```
 
 3. **Image not found**
    ```bash
-   # For Kind
    kind load docker-image spanish-tutor:latest
-   
-   # For EKS
-   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin $ECR_REPO_URL
+   ```
+
+4. **Grafana shows no metrics**
+   ```bash
+   # Check if Prometheus data source is configured correctly
+   kubectl get configmap grafana-ds -n spanish-tutor -o yaml
+   # Should show: url: http://spanish-tutor-prometheus:9090
+   ```
+
+5. **Grafana not accessible**
+   ```bash
+   # Ensure port forwarding is running
+   ps aux | grep "port-forward.*grafana"
+   # Restart if needed
+   kubectl port-forward svc/spanish-tutor-grafana 3000:3000 -n spanish-tutor
    ```
 
 ### Useful Commands
@@ -275,67 +309,25 @@ make logs-ui
 
 # Scale deployments
 kubectl scale deployment spanish-tutor-api --replicas=3 -n spanish-tutor
+
+# Check service endpoints
+kubectl get endpoints -n spanish-tutor
+
+# Verify Grafana data source
+kubectl get configmap grafana-ds -n spanish-tutor -o yaml
 ```
 
 ## 📚 Documentation
 
 - [Kubernetes Deployment Guide](README-KUBERNETES.md) - Detailed K8s setup
 - [Deployment Options](DEPLOYMENT.md) - Complete deployment comparison
-- [Terraform Documentation](terraform/README.md) - Infrastructure setup
 - [Helm Chart Documentation](helm/spanish-tutor/README.md) - Chart configuration
-
 
 ---
 
 ## Why This Project?
 
-SpanishTutor explores adding obervability, error handeling, docker and kubernetes for a project using llms.
-
-# Spanish Tutor - Local Kubernetes Deployment (Kind + Monitoring)
-
-This guide describes how to deploy the Spanish Tutor application on Kubernetes using Kind for local development, with Prometheus and Grafana for monitoring.
-
-## Prerequisites
-- Docker
-- Kind
-- kubectl
-- Helm
-
-## Local Development (Kind)
-1. Create a `.env` file and load it:
-   ```bash
-   echo "LLM_API_KEY=your-api-key" > .env
-   echo "LLM_BASE_URL=your-llm-base-url" >> .env
-   set -a; source .env; set +a
-   ```
-2. Build and load Docker image:
-   ```bash
-   docker build -t spanish-tutor:latest .
-   kind create cluster --config kind-config.yaml
-   kind load docker-image spanish-tutor:latest
-   ```
-3. Install with Helm:
-   ```bash
-   helm install spanish-tutor ./helm/spanish-tutor \
-     --set image.repository=spanish-tutor \
-     --set image.tag=latest \
-     --set config.llm.apiKey="$LLM_API_KEY" \
-     --set config.llm.baseUrl="$LLM_BASE_URL"
-   ```
-4. Port forward:
-   ```bash
-   kubectl port-forward svc/spanish-tutor-api 8000:8000 &
-   kubectl port-forward svc/spanish-tutor-ui 7860:7860 &
-   kubectl port-forward svc/spanish-tutor-prometheus 9090:9090 &
-   kubectl port-forward svc/spanish-tutor-grafana 3000:3000 &
-   ```
-5. Access:
-   - API: http://localhost:8000
-   - UI:  http://localhost:7860
-   - Prometheus: http://localhost:9090
-   - Grafana: http://localhost:3000 (admin/admin)
+SpanishTutor explores adding observability, error handling, Docker, and Kubernetes for a project using LLMs.
 
 ---
-
-**This setup is intentionally minimal, but includes Prometheus and Grafana for monitoring.**
 

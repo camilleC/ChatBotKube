@@ -80,8 +80,6 @@ class SpanishTutor:
             ])
         return formatted_history
 
-    # Even on errors, we `yield` a message — because this is a generator (if yeild is used the whole Fx turns into a generator).
-    # Generators can't use `return value`; `yield` sends the error to the caller.
     def generate_response(self, message: str, history: List[Tuple[str, str]]) -> Generator[str, None, None]:
         """Generate a response to the user's message."""
         if not self.user_level:
@@ -110,7 +108,6 @@ class SpanishTutor:
                         response += content
                         # yield to emit partial responses as the LLM generates them 
                         chat_chunks_total.inc()
-        # Exeptions not related to chunks
                         yield response
                 except (AttributeError, IndexError) as e:
                     logger.error("Malformed chunk received: %s", chunk)

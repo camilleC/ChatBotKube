@@ -15,10 +15,11 @@ spec:
       containers:
         - name: ui
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python"]
           args: ["-m", "spanishtutor.src.main"]
           ports:
             - containerPort: 7860
           env:
             - name: API_URL
-              value: "http://spanish-tutor-api:8000" 
+              value: {{ .Values.config.ui.apiUrl }}
