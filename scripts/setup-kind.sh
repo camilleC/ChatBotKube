@@ -20,8 +20,8 @@ else
 fi
 
 # Create namespace if it doesn't exist
-echo -e "${YELLOW}🔧 Creating namespace 'spanish-tutor' if needed...${NC}"
-kubectl create namespace spanish-tutor --dry-run=client -o yaml | kubectl apply -f -
+echo -e "${YELLOW}🔧 Creating namespace 'chatbotkube' if needed...${NC}"
+kubectl create namespace chatbotkube --dry-run=client -o yaml | kubectl apply -f -
 
 # Create secret for LLM API key
 if [ -z "${LLM_API_KEY:-}" ]; then
@@ -30,31 +30,31 @@ if [ -z "${LLM_API_KEY:-}" ]; then
 fi
 
 echo -e "${YELLOW} Creating secret for LLM API key...${NC}"
-kubectl create secret generic spanish-tutor-secrets \
+kubectl create secret generic chatbotkube-secrets \
   --from-literal=llm-api-key="$LLM_API_KEY" \
-  -n spanish-tutor \
+  -n chatbotkube \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # Generate values.yaml from envsubst
-echo -e "${YELLOW} Generating /tmp/values.yaml from helm/spanish-tutor/values.yaml...${NC}"
-envsubst < helm/spanish-tutor/values.yaml > /tmp/values.yaml
+echo -e "${YELLOW} Generating /tmp/values.yaml from helm/chatbot/values.yaml...${NC}"
+envsubst < helm/chatbot/values.yaml > /tmp/values.yaml
 
 # Deploy with Helm
-if helm status spanish-tutor -n spanish-tutor >/dev/null 2>&1; then
+if helm status chatbot -n chatbot >/dev/null 2>&1; then
   echo -e "${YELLOW} Upgrading existing Helm release...${NC}"
-  helm upgrade spanish-tutor ./helm/spanish-tutor \
-    --namespace spanish-tutor \
+  helm upgrade chatbot ./helm/chatbot \
+    --namespace chatbot \
     -f /tmp/values.yaml
 else
   echo -e "${YELLOW} Installing new Helm release...${NC}"
-  helm install spanish-tutor ./helm/spanish-tutor \
-    --namespace spanish-tutor \
+  helm install chatbot ./helm/chatbot \
+    --namespace chatbot \
     -f /tmp/values.yaml
 fi
 
 # Wait for deployments to become available
 echo -e "${YELLOW}⏳ Waiting for API and UI deployments to be ready...${NC}"
-kubectl wait --for=condition=available --timeout=300s deployment/spanish-tutor-api -n spanish-tutor
-kubectl wait --for=condition=available --timeout=300s deployment/spanish-tutor-ui -n spanish-tutor
+kubectl wait --for=condition=available --timeout=300s deployment/chatbot-api -n chatbot
+kubectl wait --for=condition=available --timeout=300s deployment/chatbot-ui -n chatbot
 
-echo -e "${GREEN}✅ Spanish Tutor successfully deployed to Kind!${NC}"
+echo -e "${GREEN}✅ Tutor successfully deployed to Kind!${NC}"

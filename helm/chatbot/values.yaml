@@ -1,0 +1,120 @@
+replicaCount:
+  api: 1
+  ui: 1
+
+image:
+  repository: chatbot
+  tag: "latest"
+  pullPolicy: Never
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  apiPort: ${API_PORT}
+  uiPort: ${UI_PORT}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chatbot.local
+      paths:
+        - path: /api
+          pathType: Prefix
+          serviceName: chatbot-api
+          servicePort: ${API_PORT}
+        - path: /
+          pathType: Prefix
+          serviceName: chatbot-ui
+          servicePort: ${UI_PORT}
+  tls: []
+
+resources:
+  api:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  ui:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+config:
+  api:
+    logLevel: "${LOG_LEVEL}"
+    port: ${API_PORT}
+  ui:
+    apiUrl: "${API_URL}"
+  
+
+  llm:
+    apiKey: "${LLM_API_KEY}"
+    baseUrl: "${LLM_BASE_URL}"
+  
+  prometheus:
+    enabled: true
+    port: ${PROMETHEUS_HOST_PORT}
+  
+grafana:
+  enabled: true
+  port: ${GRAFANA_HOST_PORT}
+  adminUser: "admin"
+  adminPassword: "admin"
+
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      folder: /etc/grafana/dashboards
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      path: /etc/grafana/provisioning/datasources
+
+persistence:
+  grafana:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+  grafanaDashboard:
+    enabled: true 

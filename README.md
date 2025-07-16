@@ -1,4 +1,4 @@
-# 🇪🇸 Spanish Tutor
+# Tutor ChatBot
 
 An AI-powered chatbot with robust error handling, and full-stack observability.
 This project shows how to containerize an application with Docker, add metrics and observability, and use Helm with Kubernetes.
@@ -10,7 +10,6 @@ This project shows how to containerize an application with Docker, add metrics a
 ## Table of Contents
 - [Architecture Overview](#architecture-overview)
 - [Features](#features)
-- [Demo](#demo)
 - [Quick Start](#quick-start)
 - [API Endpoints](#api-endpoints)
 - [Observability](#observability)
@@ -25,7 +24,7 @@ This project shows how to containerize an application with Docker, add metrics a
 
 ## Architecture Overview
 
-- **Gradio UI**: Modern, chat-style web interface for learners.
+- **Gradio UI**: Chat-style web interface for learners.
 - **FastAPI Backend**: Processes chat messages, handles errors, and exposes Prometheus metrics.
 - **Ollama/OpenAI-Compatible LLM**: Local or remote LLM inference for cost-effective, private tutoring.
 - **Prometheus & Grafana**: Real-time metrics, dashboards, and alerting.
@@ -45,12 +44,6 @@ This project shows how to containerize an application with Docker, add metrics a
 
 ---
 
-## Demo
-
-
-![Chat Demo](demo.gif)
-
----
 
 ##  Quick Start (Recommended)
 
@@ -59,7 +52,7 @@ Create a `.env` file in the project root:
 ```bash
 echo "LLM_API_KEY=your-api-key" > .env
 echo "LLM_BASE_URL=your-llm-base-url" >> .env
-echo "API_URL=http://spanish-tutor-api:8000/chat" >> .env
+echo "API_URL=http://chatbot-api:8000/chat" >> .env
 ```
 
 ### 2. Build and load the Docker image
@@ -74,7 +67,7 @@ make kind-setup
 
 ### 4. Load the Docker image into Kind
 ```bash
-kind load docker-image spanish-tutor:latest
+kind load docker-image chatbot:latest
 ```
 
 ### 5. Generate Helm values file from your .env
@@ -94,7 +87,8 @@ make helm-install
 make restart-services
 ```
 
-### 8. Port forward to access all services
+### 8. Port forward to access all services. 
+####   You may need to kill ports allready in use (lsof -i :8000 -i :7860 -i :9090 -i :3000) and then kill -9 pid
 ```bash
 make port-forward
 ```
@@ -105,9 +99,193 @@ make port-forward
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000 (admin/admin)
 
-**Note:** If Grafana shows no metrics, ensure the data source is properly configured to connect to `spanish-tutor-prometheus:9090`.
+**Note:** If Grafana shows no metrics, ensure the data source is properly configured to connect to `chatbot-prometheus:9090`.
 
-**Note:** All resources are deployed in the `spanish-tutor` namespace. All Makefile commands use this namespace by default.
+**Note:** All resources are deployed in the `chatbot` namespace. All Makefile commands use this namespace by default.
+
+---
+
+## Localhost Access & Port Forwarding
+
+All services run inside the Kubernetes cluster but are accessible via `localhost` through port-forwarding. This allows you to interact with the application using your local web browser while maintaining the benefits of containerized deployment.
+
+### **Available Localhost Endpoints**
+
+| Service       | Localhost URL                    | Description                           | Default Credentials |
+|-------------- |----------------------------------|---------------------------------------|-------------------  |
+| **UI**        | http://localhost:7860            | Main chatbot interface                | None required       |
+| **API**       | http://localhost:8000            | FastAPI backend (for direct testing)  | None required       |
+| **Prometheus**| http://localhost:9090            | Metrics and monitoring                | None required       |
+| **Grafana**   | http://localhost:3000            | Dashboards and visualization          | admin/admin         |
+
+### **How Port Forwarding Works**
+
+Port forwarding creates a tunnel between your local machine and the Kubernetes services:
+
+```bash
+# Individual port-forward commands
+kubectl port-forward svc/chatbot-ui 7860:7860 -n chatbot
+kubectl port-forward svc/chatbot-api 8000:8000 -n chatbot
+kubectl port-forward svc/chatbot-prometheus 9090:9090 -n chatbot
+kubectl port-forward svc/chatbot-grafana 3000:3000 -n chatbot
+```
+
+**Or use the Makefile to forward all services at once:**
+```bash
+make port-forward
+```
+
+### **Service Communication Flow**
+
+```
+Your Browser → localhost:7860 → chatbot-ui (K8s) → chatbot-api (K8s) → LLM
+```
+
+- **UI to API**: Uses in-cluster DNS (`chatbot-api:8000`)
+- **Browser to UI**: Uses port-forward (`localhost:7860`)
+- **API to LLM**: Uses your configured `LLM_BASE_URL`
+
+### **Setting Up Port Forwarding**
+
+1. **Automatic (Recommended):**
+   ```bash
+   make port-forward
+   ```
+   This command:
+   - Waits for all pods to be ready
+   - Starts port-forwarding for all services
+   - Runs in the background
+
+2. **Manual (Individual services):**
+   ```bash
+   # UI only
+   kubectl port-forward svc/chatbot-ui 7860:7860 -n chatbot
+   
+   # API only (for direct testing)
+   kubectl port-forward svc/chatbot-api 8000:8000 -n chatbot
+   
+   # Monitoring stack
+   kubectl port-forward svc/chatbot-prometheus 9090:9090 -n chatbot
+   kubectl port-forward svc/chatbot-grafana 3000:3000 -n chatbot
+   ```
+
+### **Testing the Setup**
+
+1. **UI Interface:**
+   - Open http://localhost:7860
+   - Select your language level (A1-C1)
+   - Start chatting with the bot
+
+2. **API Direct Testing:**
+   ```bash
+   curl -X POST http://localhost:8000/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Hello", "history": []}'
+   ```
+
+3. **Health Check:**
+   ```bash
+   curl http://localhost:8000/health
+   ```
+
+4. **Metrics:**
+   - View Prometheus metrics: http://localhost:9090
+   - View Grafana dashboards: http://localhost:3000
+
+### **Accessing Grafana Dashboards**
+
+1. **Start Grafana port-forwarding:**
+   ```bash
+   kubectl port-forward svc/chatbot-grafana 3000:3000 -n chatbot
+   ```
+
+2. **Open Grafana:**
+   - URL: http://localhost:3000
+   - Username: `admin`
+   - Password: `admin`
+
+3. **Available Dashboards:**
+   - **ChatBot Usage & Performance**: Real-time request rates, latency, and chat metrics
+   - **ChatBot Reliability**: Error rates, system health, and availability metrics
+
+4. **Dashboard Features:**
+   - **Request Rate**: Number of chat requests per minute
+   - **Response Latency**: Average response times
+   - **Error Tracking**: HTTP status codes and error types
+   - **System Health**: Pod status and resource utilization
+
+5. **If no data appears:**
+   ```bash
+   # Verify Prometheus is running
+   kubectl get pods -n chatbot | grep prometheus
+   
+   # Check Grafana data source configuration
+   kubectl get configmap grafana-ds -n chatbot -o yaml
+   ```
+   - In Grafana: Go to Configuration → Data Sources → Prometheus
+   - Ensure URL is: `http://chatbot-prometheus:9090`
+   - Test the connection
+
+### **Troubleshooting Port Forwarding**
+
+#### **Port Already in Use**
+```bash
+# Check what's using the port
+lsof -i :7860
+lsof -i :8000
+lsof -i :9090
+lsof -i :3000
+
+# Kill existing port-forward processes
+pkill -f 'kubectl port-forward'
+```
+
+#### **Services Not Accessible**
+```bash
+# Check if services exist
+kubectl get svc -n chatbot
+
+# Check if pods are running
+kubectl get pods -n chatbot
+
+# Check service endpoints
+kubectl get endpoints -n chatbot
+```
+
+#### **Connection Refused**
+```bash
+# Verify port-forward is running
+ps aux | grep "port-forward"
+
+# Restart port-forwarding
+make port-forward
+```
+
+#### **UI Can't Connect to API**
+- Ensure both UI and API are port-forwarded
+- Check that `API_URL=http://chatbot-api:8000/chat` in your `.env`
+- Verify both services are in the same namespace (`chatbot`)
+
+### **Stopping Port Forwarding**
+
+```bash
+# Stop all port-forward processes
+pkill -f 'kubectl port-forward'
+
+# Or stop individual processes
+ps aux | grep "port-forward"
+kill <process-id>
+```
+
+### **Alternative: Load Balancer (Production)**
+
+For production deployments, you can expose services via LoadBalancer instead of port-forwarding:
+
+```yaml
+# In your Helm values
+service:
+  type: LoadBalancer
+```
 
 ---
 
@@ -126,7 +304,7 @@ make restart-services
    ```
 2. (Optional) Delete the namespace:
    ```bash
-   kubectl delete namespace spanish-tutor || true
+kubectl delete namespace chatbot || true
    ```
 3. (Optional) Delete the Kind cluster:
    ```bash
@@ -139,7 +317,7 @@ make restart-services
 1. Ensure your `.env` is correct and loaded.
 2. Build and load the Docker image: `make docker-build`
 3. Start Kind: `make kind-setup`
-4. Load the image into Kind: `kind load docker-image spanish-tutor:latest`
+4. Load the image into Kind: `kind load docker-image chatbot:latest`
 5. Generate values: `make envsubst-values`
 6. Install/upgrade Helm: `make helm-install` or `make helm-upgrade`
 7. Restart services if needed: `make restart-services`
@@ -239,7 +417,7 @@ pytest tests/test_endpoints.py -v
 
 ### Test Coverage
 ```bash
-pytest tests/ --cov=spanishtutor --cov-report=html
+pytest tests/ --cov=chatbot --cov-report=html
 ```
 
 ##  Security
@@ -275,19 +453,19 @@ pytest tests/ --cov=spanishtutor --cov-report=html
    ```bash
    make logs
    make logs-ui
-   kubectl describe pod -l app=spanish-tutor-api -n spanish-tutor
+kubectl describe pod -l app=chatbot-api -n chatbot
    ```
 
 3. **Image not found**
    ```bash
-   kind load docker-image spanish-tutor:latest
+   kind load docker-image chatbot:latest
    ```
 
 4. **Grafana shows no metrics**
    ```bash
    # Check if Prometheus data source is configured correctly
-   kubectl get configmap grafana-ds -n spanish-tutor -o yaml
-   # Should show: url: http://spanish-tutor-prometheus:9090
+   kubectl get configmap grafana-ds -n chatbot -o yaml
+# Should show: url: http://chatbot-prometheus:9090
    ```
 
 5. **Grafana not accessible**
@@ -295,7 +473,7 @@ pytest tests/ --cov=spanishtutor --cov-report=html
    # Ensure port forwarding is running
    ps aux | grep "port-forward.*grafana"
    # Restart if needed
-   kubectl port-forward svc/spanish-tutor-grafana 3000:3000 -n spanish-tutor
+kubectl port-forward svc/chatbot-grafana 3000:3000 -n chatbot
    ```
 
 ### Useful Commands
@@ -308,26 +486,26 @@ make logs
 make logs-ui
 
 # Scale deployments
-kubectl scale deployment spanish-tutor-api --replicas=3 -n spanish-tutor
+kubectl scale deployment chatbot-api --replicas=3 -n chatbot
 
 # Check service endpoints
-kubectl get endpoints -n spanish-tutor
+kubectl get endpoints -n chatbot
 
 # Verify Grafana data source
-kubectl get configmap grafana-ds -n spanish-tutor -o yaml
+kubectl get configmap grafana-ds -n chatbot -o yaml
 ```
 
 ## 📚 Documentation
 
 - [Kubernetes Deployment Guide](README-KUBERNETES.md) - Detailed K8s setup
 - [Deployment Options](DEPLOYMENT.md) - Complete deployment comparison
-- [Helm Chart Documentation](helm/spanish-tutor/README.md) - Chart configuration
+- [Helm Chart Documentation](helm/chatbot/README.md) - Chart configuration
 
 ---
 
 ## Why This Project?
 
-SpanishTutor explores adding observability, error handling, Docker, and Kubernetes for a project using LLMs.
+ChatBot explores adding observability, error handling, Docker, and Kubernetes for a project using LLMs.
 
 ---
 

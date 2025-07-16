@@ -7,14 +7,14 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = fh.read().splitlines()
 
 setup(
-    name="spanish-tutor",
+    name="chatbotkube",
     version="0.1.0",
     author="Camille Ciancanelli",
     author_email="your.email@example.com",  # Update this with your email
-    description="An AI-powered Spanish language tutor that adapts to your proficiency level",
+    description="An AI-powered chatbot language tutor that adapts to your proficiency level",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/camilleC/SpanishTutor",
+    url="https://github.com/camilleC/chatbotkube",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -32,7 +32,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "spanish-tutor=spanishtutor.src.main:main",
+            "chatbotkube=chatbot.src.main:main",
         ],
     },
 ) 
