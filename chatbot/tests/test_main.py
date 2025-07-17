@@ -120,6 +120,6 @@ class TestChatbotTutor(unittest.TestCase):
         self.assertEqual(formatted, expected)
 
     def test_set_level(self):
-        response = self.tutor.set_level("B2")
+        response = self.tutor.set_language("B2")
         self.assertEqual(self.tutor.user_language, "B2")
         self.assertIn("B2", response)

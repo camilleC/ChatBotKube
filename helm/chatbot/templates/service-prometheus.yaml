@@ -5,7 +5,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 9090
-      targetPort: 9090
+    - port: {{ .Values.config.prometheus.port | int}}
+      targetPort: {{ .Values.config.prometheus.port | int}}
   selector:
     app: chatbot-prometheus 

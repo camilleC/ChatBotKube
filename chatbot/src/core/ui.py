@@ -5,11 +5,11 @@ from typing import List, Tuple
 import os
 
 API_URL = os.getenv("API_URL", "http://chatbot-api:8000/chat")
-UI_PORT = os.getenv("UI_PORT", "7860")
+UI_PORT = os.getenv("UI_PORT", 7860)
 LANGUAGE = [
     "Spanish",
     "Euskara",
-    "Catalan"
+    "Catalan",
     "Italian",
     "French",
     "portuguese"
@@ -59,7 +59,7 @@ class ChatbotApp:
         self.interface.launch(
             share=False,
             server_name="0.0.0.0",
-            server_port=7860,
+            server_port=UI_PORT,
             show_error=True,
             show_api=False,
         )

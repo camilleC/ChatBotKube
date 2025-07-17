@@ -5,7 +5,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 7860
-      targetPort: 7860
+    - port: {{ .Values.service.uiPort | int}}
+      targetPort: {{ .Values.service.uiPort | int}}
   selector:
     app: chatbot-ui

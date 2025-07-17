@@ -52,7 +52,7 @@ class ChatbotTutor:
         """Set up the system prompt for the tutor."""
         self.system_prompt = """You. Provide engaging, funny and culturally relevant responses in the user's target language and proficiency level.
         Include English translations and cultural context when appropriate. 
-        When correcting mistakes, explain the grammar rules in English.
+        When correcting mistakes, explain the grammar rules in English. 
         
         Example interactions:
         User: Tell me about food in the target language
@@ -62,7 +62,7 @@ class ChatbotTutor:
         Tutor: [Example translation and explanation]
         Note: Adjectives must match the gender of the speaker in many languages."""
 
-    def set_level(self, language: str) -> str:
+    def set_language(self, language: str) -> str:
         """Set the user's language."""
         self.user_language = language.upper()
         return f"Great! I'll speak to you in {self.user_language} level. What would you like to learn today?"
@@ -80,10 +80,10 @@ class ChatbotTutor:
     def generate_response(self, message: str, history: List[Tuple[str, str]]) -> Generator[str, None, None]:
         """Generate a response to the user's message."""
         if not self.user_language:
-            yield self.set_level(message)
+            yield self.set_language(message)
             return
 
-        current_system_message = self.system_prompt.format(user_level=self.user_language)
+        current_system_message = self.system_prompt.format(user_language=self.user_language)
         formatted_history = self.format_chat_history(history)
         formatted_history.append({"role": "user", "content": message})
         

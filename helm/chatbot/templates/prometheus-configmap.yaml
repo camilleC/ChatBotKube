@@ -11,5 +11,5 @@ data:
     scrape_configs:
       - job_name: 'chatbot-api'
         static_configs:
-          - targets: ['chatbot-api:8000']
+          - targets: ['chatbot-api:{{ .Values.service.apiPort | int }}']
         metrics_path: /metrics 
