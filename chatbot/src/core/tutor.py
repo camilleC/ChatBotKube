@@ -45,17 +45,27 @@ class ChatbotTutor:
             base_url=os.getenv('LLM_BASE_URL', 'http://host.docker.internal:11434/v1'),
             api_key=os.getenv('LLM_API_KEY', 'ollama')
         )
-        self.user_level: Optional[str] = None
+        self.user_language: Optional[str] = None
         self._setup_system_prompt()
 
     def _setup_system_prompt(self) -> None:
         """Set up the system prompt for the tutor."""
-        self.system_prompt = """You are an experienced language tutor chatbot. Provide engaging and culturally relevant responses in the user's target language and proficiency level. Include English translations and cultural context when appropriate. When correcting mistakes, explain the grammar rules in English.\n\nExample interactions:\n\nUser: Tell me about food in the target language\nTutor: [Example response in target language with translation and context]\n\nUser: How do I say \"I'm tired\"?\nTutor: [Example translation and explanation]\nNote: Adjectives must match the gender of the speaker in many languages."""
+        self.system_prompt = """You. Provide engaging, funny and culturally relevant responses in the user's target language and proficiency level.
+        Include English translations and cultural context when appropriate. 
+        When correcting mistakes, explain the grammar rules in English. 
+        
+        Example interactions:
+        User: Tell me about food in the target language
+        Tutor: [Example response in target language with translation and context]
+        
+        User: How do I say \"I'm tired\"?
+        Tutor: [Example translation and explanation]
+        Note: Adjectives must match the gender of the speaker in many languages."""
 
-    def set_level(self, level: str) -> str:
-        """Set the user's language proficiency level."""
-        self.user_level = level.upper()
-        return f"Great! I'll speak to you in {self.user_level} level. What would you like to learn today?"
+    def set_language(self, language: str) -> str:
+        """Set the user's language."""
+        self.user_language = language.upper()
+        return f"Great! I'll speak to you in {self.user_language} level. What would you like to learn today?"
 
     def format_chat_history(self, history: List[Tuple[str, str]]) -> List[dict]:
         """Format chat history for the LLM."""
@@ -69,11 +79,11 @@ class ChatbotTutor:
 
     def generate_response(self, message: str, history: List[Tuple[str, str]]) -> Generator[str, None, None]:
         """Generate a response to the user's message."""
-        if not self.user_level:
-            yield self.set_level(message)
+        if not self.user_language:
+            yield self.set_language(message)
             return
 
-        current_system_message = self.system_prompt.format(user_level=self.user_level)
+        current_system_message = self.system_prompt.format(user_language=self.user_language)
         formatted_history = self.format_chat_history(history)
         formatted_history.append({"role": "user", "content": message})
         

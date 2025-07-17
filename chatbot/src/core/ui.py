@@ -4,14 +4,15 @@ import gradio as gr
 from typing import List, Tuple
 import os
 
-API_URL = os.getenv("API_URL", "http://localhost:8000/chat")
-UI_PORT = os.getenv("UI_PORT", "7860")
-LEVELS = [
-    "A1 - Beginner",
-    "A2 - Elementary",
-    "B1 - Intermediate",
-    "B2 - Upper Intermediate",
-    "C1 - Advanced"
+API_URL = os.getenv("API_URL", "http://chatbot-api:8000/chat")
+UI_PORT = os.getenv("UI_PORT", 7860)
+LANGUAGE = [
+    "Spanish",
+    "Euskara",
+    "Catalan",
+    "Italian",
+    "French",
+    "portuguese"
 ]
 
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -29,7 +30,7 @@ class ChatbotApp:
             fn=self.handle_chat,
             title="chatBotKube Language Learning Assistant",
             description=(
-                "Welcome! Please tell me your language level (A1, A2, B1, B2, C1, C2) by clicking a button below to begin. "
+                "Welcome! Please tell me your language by clicking a button to begin. "
             ),
             theme=gr.themes.Soft(
                 primary_hue="blue",
@@ -38,7 +39,7 @@ class ChatbotApp:
                 radius_size="md",
                 text_size="md",
             ),
-            examples=LEVELS
+            examples=LANGUAGE
         )
         logger.info("Gradio UI setup is complete")
 
@@ -58,7 +59,7 @@ class ChatbotApp:
         self.interface.launch(
             share=False,
             server_name="0.0.0.0",
-            server_port=7860,
+            server_port=UI_PORT,
             show_error=True,
             show_api=False,
         )

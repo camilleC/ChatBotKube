@@ -19,7 +19,7 @@ spec:
           command: ["python"]
           args: ["-m", "chatbot.src.main"]
           ports:
-            - containerPort: 7860
+            - containerPort: {{.Values.service.uiPort | int}}
           env:
             - name: API_URL
               value: {{ .Values.config.ui.apiUrl }}

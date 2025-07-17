@@ -28,17 +28,17 @@ class TestChatbotTutor(unittest.TestCase):
         self.mock_openai_class.return_value = self.mock_client
 
         self.tutor = ChatbotTutor()
-        self.tutor.user_level = "A1"
+        self.tutor.user_language = "A1"
 
     def tearDown(self):
         """Stop patcher after each test."""
         self.openai_patcher.stop()
 
     def test_initial_level_setting(self):
-        self.tutor.user_level = None
+        self.tutor.user_language = None
         response = next(self.tutor.generate_response("A2", []))
         self.assertIn("A2", response)
-        self.assertEqual(self.tutor.user_level, "A2")
+        self.assertEqual(self.tutor.user_language, "A2")
 
     def test_chat_response(self):
         mock_chunk = MagicMock()
@@ -120,6 +120,6 @@ class TestChatbotTutor(unittest.TestCase):
         self.assertEqual(formatted, expected)
 
     def test_set_level(self):
-        response = self.tutor.set_level("B2")
-        self.assertEqual(self.tutor.user_level, "B2")
+        response = self.tutor.set_language("B2")
+        self.assertEqual(self.tutor.user_language, "B2")
         self.assertIn("B2", response)

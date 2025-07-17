@@ -1,7 +1,8 @@
-# Tutor ChatBot
+# Lanuguage Tutor ChatBot
 
 An AI-powered chatbot with robust error handling, and full-stack observability.
-This project shows how to containerize an application with Docker, add metrics and observability, and use Helm with Kubernetes.
+
+This project refactored my containerized application, SpanishTutor, to run on Kubernetes using Helm. By transitioning to Helm-based deployments, the app now benefits from version-controlled, reproducible, and environment-specific configurations — enabling easier scaling, streamlined updates, and more reliable infrastructure management across development and production environments.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 
@@ -34,7 +35,6 @@ This project shows how to containerize an application with Docker, add metrics a
 
 ## Features
 
-- Adaptive conversation practice (A1–C2 levels)
 - Real-time English translation
 - Robust error handling with custom exceptions and HTTP status codes
 - Automatic retry logic for transient LLM/model failures
@@ -79,7 +79,7 @@ make envsubst-values
 ```bash
 make helm-install
 # If already installed, use:
-# make helm-upgrade
+make helm-upgrade
 ```
 
 ### 7. Restart all services (if needed)
@@ -93,14 +93,22 @@ make restart-services
 make port-forward
 ```
 
-### 9. Access the app and monitoring
+### 10. To re-deploy a code change
+```bash
+make ports-stop
+make docker-build
+kind load docker-image chatbot:latest
+make restart-services
+make port-forward
+```
+
+### 10. Access the app and monitoring
 - UI:  http://localhost:7860
 - API: http://localhost:8000
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000 (admin/admin)
 
 **Note:** If Grafana shows no metrics, ensure the data source is properly configured to connect to `chatbot-prometheus:9090`.
-
 **Note:** All resources are deployed in the `chatbot` namespace. All Makefile commands use this namespace by default.
 
 ---
@@ -122,15 +130,7 @@ All services run inside the Kubernetes cluster but are accessible via `localhost
 
 Port forwarding creates a tunnel between your local machine and the Kubernetes services:
 
-```bash
-# Individual port-forward commands
-kubectl port-forward svc/chatbot-ui 7860:7860 -n chatbot
-kubectl port-forward svc/chatbot-api 8000:8000 -n chatbot
-kubectl port-forward svc/chatbot-prometheus 9090:9090 -n chatbot
-kubectl port-forward svc/chatbot-grafana 3000:3000 -n chatbot
-```
-
-**Or use the Makefile to forward all services at once:**
+**Use Makefile to forward all services at once:**
 ```bash
 make port-forward
 ```
@@ -145,35 +145,12 @@ Your Browser → localhost:7860 → chatbot-ui (K8s) → chatbot-api (K8s) → L
 - **Browser to UI**: Uses port-forward (`localhost:7860`)
 - **API to LLM**: Uses your configured `LLM_BASE_URL`
 
-### **Setting Up Port Forwarding**
-
-1. **Automatic (Recommended):**
-   ```bash
-   make port-forward
-   ```
-   This command:
-   - Waits for all pods to be ready
-   - Starts port-forwarding for all services
-   - Runs in the background
-
-2. **Manual (Individual services):**
-   ```bash
-   # UI only
-   kubectl port-forward svc/chatbot-ui 7860:7860 -n chatbot
-   
-   # API only (for direct testing)
-   kubectl port-forward svc/chatbot-api 8000:8000 -n chatbot
-   
-   # Monitoring stack
-   kubectl port-forward svc/chatbot-prometheus 9090:9090 -n chatbot
-   kubectl port-forward svc/chatbot-grafana 3000:3000 -n chatbot
-   ```
 
 ### **Testing the Setup**
 
 1. **UI Interface:**
    - Open http://localhost:7860
-   - Select your language level (A1-C1)
+   - Select your language
    - Start chatting with the bot
 
 2. **API Direct Testing:**
@@ -191,6 +168,12 @@ Your Browser → localhost:7860 → chatbot-ui (K8s) → chatbot-api (K8s) → L
 4. **Metrics:**
    - View Prometheus metrics: http://localhost:9090
    - View Grafana dashboards: http://localhost:3000
+
+5. **Tests:**
+```bash
+make test && make test-cov:
+```
+
 
 ### **Accessing Grafana Dashboards**
 
@@ -230,14 +213,7 @@ Your Browser → localhost:7860 → chatbot-ui (K8s) → chatbot-api (K8s) → L
 
 #### **Port Already in Use**
 ```bash
-# Check what's using the port
-lsof -i :7860
-lsof -i :8000
-lsof -i :9090
-lsof -i :3000
-
-# Kill existing port-forward processes
-pkill -f 'kubectl port-forward'
+make stop-ports
 ```
 
 #### **Services Not Accessible**
@@ -266,51 +242,12 @@ make port-forward
 - Check that `API_URL=http://chatbot-api:8000/chat` in your `.env`
 - Verify both services are in the same namespace (`chatbot`)
 
-### **Stopping Port Forwarding**
-
-```bash
-# Stop all port-forward processes
-pkill -f 'kubectl port-forward'
-
-# Or stop individual processes
-ps aux | grep "port-forward"
-kill <process-id>
-```
-
-### **Alternative: Load Balancer (Production)**
-
-For production deployments, you can expose services via LoadBalancer instead of port-forwarding:
-
-```yaml
-# In your Helm values
-service:
-  type: LoadBalancer
-```
-
----
-
 ## How to Restart Services
 
 To restart all deployments (API, UI, Prometheus, Grafana) in the namespace:
 ```bash
 make restart-services
 ```
-
-## How to Clean Up and Re-Deploy Everything
-
-1. Uninstall the Helm release:
-   ```bash
-   make helm-uninstall
-   ```
-2. (Optional) Delete the namespace:
-   ```bash
-kubectl delete namespace chatbot || true
-   ```
-3. (Optional) Delete the Kind cluster:
-   ```bash
-   kind delete cluster
-   ```
-4. Re-run the Quick Start steps above.
 
 ## How to Get Everything Running
 
@@ -321,17 +258,8 @@ kubectl delete namespace chatbot || true
 5. Generate values: `make envsubst-values`
 6. Install/upgrade Helm: `make helm-install` or `make helm-upgrade`
 7. Restart services if needed: `make restart-services`
-8. Port forward: `make port-forward`
+8. Port forward: `make port-forward` (may need to kill ports in use first)
 9. Open the UI, API, Prometheus, and Grafana in your browser.
-
-## One-Liner Commands
-
-**Restart and port-forward everything:**
-```bash
-pkill -f 'kubectl port-forward' && make restart-services && make port-forward
-```
-
----
 
 ##  Prerequisites
 
@@ -362,10 +290,6 @@ make test
 make lint
 ```
 
-### Build Docker Image
-```bash
-make docker-build
-```
 
 ## Monitoring & Observability
 
@@ -422,7 +346,7 @@ pytest tests/ --cov=chatbot --cov-report=html
 
 ##  Security
 
-- API keys stored in Kubernetes secrets
+- API keys and passwords - TODO Will be stored in Kubernetes secrets
 - Environment variable configuration
 - Health checks and readiness probes
 - Resource limits and requests
@@ -495,10 +419,10 @@ kubectl get endpoints -n chatbot
 kubectl get configmap grafana-ds -n chatbot -o yaml
 ```
 
-## 📚 Documentation
+##  Documentation
 
 - [Kubernetes Deployment Guide](README-KUBERNETES.md) - Detailed K8s setup
-- [Deployment Options](DEPLOYMENT.md) - Complete deployment comparison
+- [Deployment Options](DEPLOYMENT.md) - TODO
 - [Helm Chart Documentation](helm/chatbot/README.md) - Chart configuration
 
 ---
