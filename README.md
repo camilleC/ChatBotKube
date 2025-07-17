@@ -95,7 +95,7 @@ make port-forward
 
 ### 10. To re-deploy a code change
 ```bash
-make ports-stop
+make stop-ports
 make docker-build
 kind load docker-image chatbot:latest
 make restart-services
