@@ -65,7 +65,7 @@ class ChatbotTutor:
     def set_language(self, language: str) -> str:
         """Set the user's language."""
         self.user_language = language.upper()
-        return f"Great! I'll speak to you in {self.user_language} level. What would you like to learn today?"
+        return f"Great! I'll speak to you in {self.user_language}. What would you like to learn today?"
 
     def format_chat_history(self, history: List[Tuple[str, str]]) -> List[dict]:
         """Format chat history for the LLM."""
