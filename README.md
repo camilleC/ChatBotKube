@@ -389,7 +389,7 @@ kubectl describe pod -l app=chatbot-api -n chatbot
    ```bash
    # Check if Prometheus data source is configured correctly
    kubectl get configmap grafana-ds -n chatbot -o yaml
-# Should show: url: http://chatbot-prometheus:9090
+   # Should show: url: http://chatbot-prometheus:9090
    ```
 
 5. **Grafana not accessible**
