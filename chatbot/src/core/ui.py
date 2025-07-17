@@ -4,7 +4,7 @@ import gradio as gr
 from typing import List, Tuple
 import os
 
-API_URL = os.getenv("API_URL", "http://chatbot-api:8000/chat") # http://chatbot-api:8000/chat
+API_URL = os.getenv("API_URL", "http://chatbot-api:8000/chat")
 UI_PORT = os.getenv("UI_PORT", "7860")
 LEVELS = [
     "A1 - Beginner",
