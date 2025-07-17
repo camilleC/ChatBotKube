@@ -96,6 +96,10 @@ port-forward:
 	kubectl port-forward svc/chatbot-grafana 3000:3000 -n $(NAMESPACE) &
 	@echo "All port-forwards started."
 
+stop-ports:
+	@echo "Kill existing port forwards"
+	ps aux | grep 'kubectl port-forward' | grep -v grep | awk '{print $$2}' | xargs kill || true
+
 logs:
 	kubectl logs -f deployment/chatbot-api -n $(NAMESPACE)
 

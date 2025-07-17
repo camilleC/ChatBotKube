@@ -1,4 +1,4 @@
-# Tutor ChatBot
+# Lanuguage Tutor ChatBot
 
 An AI-powered chatbot with robust error handling, and full-stack observability.
 This project shows how to containerize an application with Docker, add metrics and observability, and use Helm with Kubernetes.
@@ -270,7 +270,10 @@ make port-forward
 
 ```bash
 # Stop all port-forward processes
-pkill -f 'kubectl port-forward'
+lsof -ti:8000 | xargs kill -9
+lsof -ti:7860 | xargs kill -9
+lsof -ti:9090 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
 
 # Or stop individual processes
 ps aux | grep "port-forward"
@@ -321,14 +324,14 @@ kubectl delete namespace chatbot || true
 5. Generate values: `make envsubst-values`
 6. Install/upgrade Helm: `make helm-install` or `make helm-upgrade`
 7. Restart services if needed: `make restart-services`
-8. Port forward: `make port-forward`
+8. Port forward: `make port-forward` (may need to kill ports in use first)
 9. Open the UI, API, Prometheus, and Grafana in your browser.
 
 ## One-Liner Commands
 
 **Restart and port-forward everything:**
 ```bash
-pkill -f 'kubectl port-forward' && make restart-services && make port-forward
+lsof -ti:8000,7860,9090,3000 | xargs kill -9 && make restart-services && make port-forward
 ```
 
 ---
@@ -495,10 +498,10 @@ kubectl get endpoints -n chatbot
 kubectl get configmap grafana-ds -n chatbot -o yaml
 ```
 
-## 📚 Documentation
+##  Documentation
 
 - [Kubernetes Deployment Guide](README-KUBERNETES.md) - Detailed K8s setup
-- [Deployment Options](DEPLOYMENT.md) - Complete deployment comparison
+- [Deployment Options](DEPLOYMENT.md) - TODO
 - [Helm Chart Documentation](helm/chatbot/README.md) - Chart configuration
 
 ---
